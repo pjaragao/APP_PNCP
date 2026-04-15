@@ -38,7 +38,22 @@ PNCP Insight é um SaaS focado na otimização da jornada de empresas B2B que ve
    npm run dev
    ```
 
+### 🐳 Docker (Recomendado)
+
+Para subir o ambiente completo (App + Database compatível com Supabase) via Docker:
+
+1. Certifique-se de ter o Docker e Docker Compose instalados.
+2. Configure seu arquivo `.env` (use o `.env.example` como base).
+3. Suba os containers:
+   ```bash
+   docker-compose up -d --build
+   ```
+4. O app estará disponível em `http://localhost:3000`.
+
+O banco de dados PostgreSQL rodará no container `pncp-db` e estará exposto na porta `5432`.
+
 ## 📈 Funcionalidades Implementadas
+
 
 - [x] Landing Page Premium.
 - [x] Sistema de Autenticação (Supabase SSR).
