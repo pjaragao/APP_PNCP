@@ -1,0 +1,347 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Modalidade {
+  LEILAO_ELETRONICO
+  DIALOGO_COMPETITIVO
+  CONCURSO
+  CONCORRENCIA_ELETRONICA
+  CONCORRENCIA_PRESENCIAL
+  PREGAO_ELETRONICO
+  PREGAO_PRESENCIAL
+  DISPENSA
+  INEXIGIBILIDADE
+  MANIFESTACAO_INTERESSE
+  PRE_QUALIFICACAO
+  CREDENCIAMENTO
+  LEILAO_PRESENCIAL
+}
+
+enum TipoInstrumento {
+  EDITAL
+  AVISO_CONTRATACAO_DIRETA
+  ATO_AUTORIZANDO_CONTRATACAO_DIRETA
+}
+
+enum SituacaoContratacao {
+  DIVULGADA
+  REVOGADA
+  ANULADA
+  SUSPENSA
+}
+
+enum SituacaoItem {
+  EM_ANDAMENTO
+  HOMOLOGADO
+  CANCELADO
+  DESERTO
+  FRACASSADO
+}
+
+enum ModoDisputa {
+  ABERTO
+  FECHADO
+  ABERTO_FECHADO
+  DISPENSA_DISPUTA
+  NA
+  FECHADO_ABERTO
+}
+
+enum CriterioJulgamento {
+  MENOR_PRECO
+  MAIOR_DESCONTO
+  TECNICA_E_PRECO
+  MAIOR_LANCE
+  MAIOR_RETORNO
+  MELHOR_TECNICA
+  CONTEUDO_ARTISTICO
+}
+
+enum Esfera {
+  FEDERAL
+  ESTADUAL
+  MUNICIPAL
+}
+
+enum Poder {
+  LEGISLATIVO
+  EXECUTIVO
+  JUDICIARIO
+}
+
+enum StatusAcompanhamento {
+  ACOMPANHANDO
+  PARTICIPANDO
+  PROPOSTA_ENVIADA
+  HOMOLOGADO_VENCIDO
+  HOMOLOGADO_PERDIDO
+  CANCELADO
+}
+
+enum TipoDocumento {
+  HABILITACAO
+  TECNICA
+  FINANCEIRA
+  CERTIDAO
+  ATESTADO
+  PORTFOLIO
+}
+
+enum StatusProposta {
+  RASCUNHO
+  GERADA
+  ENVIADA
+}
+
+enum Plano {
+  FREE
+  BASIC
+  PRO
+  PREMIUM
+}
+
+enum StatusPagamento {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+model Usuario {
+  id                   String   @id @default(uuid())
+  email                String   @unique
+  nome                 String?
+  empresa_nome         String?
+  empresa_cnpj         String?  @unique
+  empresa_inscricao_estadual String?
+  empresa_inscricao_municipal String?
+  empresa_endereco     String?
+  empresa_telefone     String?
+  
+  plano              Plano     @default(FREE)
+  status_pagamento   StatusPagamento @default(TRIAL)
+  stripe_customer_id    String?   @unique
+  stripe_subscription_id String?  @unique
+  plano_expira_em      DateTime?
+
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  // Relations
+  itens_acompanhados     UsuarioItem[]
+  documentos             DocumentoUsuario[]
+  propostas              Proposta[]
+  acervos_tecnicos       AcervoTecnico[]
+  alertas                Alerta[]
+
+  @@map("usuarios")
+}
+
+model Contratacao {
+  id                      String   @id @default(uuid())
+  numero_controle_pncp    String   @unique
+
+  objeto                  String
+  codigo_modalidade       Modalidade
+  tipo_instrumento        TipoInstrumento
+  modo_disputa            ModoDisputa?
+  criterio_julgamento     CriterioJulgamento?
+
+  situacao                SituacaoContratacao @default(DIVULGADA)
+  situacao_item           SituacaoItem?       @default(EM_ANDAMENTO)
+
+  data_divulgacao         DateTime?
+  data_recebimento_propostas DateTime?
+  
+  valor_estimado          Decimal?  @db.Decimal(15,2)
+  valor_homologado        Decimal?  @db.Decimal(15,2)
+  valor_sigiloso          Boolean   @default(false)
+
+  uf                      String?
+  codigo_municipio_ibge   Int?
+  municipio_nome          String?
+
+  orgao_nome              String
+  orgao_cnpj              String
+  orgao_uasg              String?
+  orgao_esfera            Esfera?
+  orgao_poder             Poder?
+
+  srp                     Boolean   @default(false)
+  raw_data                Json?
+
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+  last_sync_at            DateTime  @default(now())
+
+  // Relations
+  itens                   ItemContratacao[]
+  documentos              DocumentoPncp[]
+  usuarios_acompanhando   UsuarioItem[]
+  propostas               Proposta[]
+  editais                 Edital[]
+
+  @@index([uf])
+  @@index([codigo_modalidade])
+  @@index([data_recebimento_propostas])
+  @@map("contratacoes")
+}
+
+model ItemContratacao {
+  id                String   @id @default(uuid())
+  contratacao_id    String
+  numero_item       Int
+  descricao         String
+  quantidade        Decimal  @db.Decimal(15,3)
+  unidade           String?
+  valor_unitario    Decimal? @db.Decimal(15,2)
+  valor_total       Decimal? @db.Decimal(15,2)
+  valor_sigiloso    Boolean  @default(false)
+
+  cataiogo_codigo   String?
+  cataiogo_descricao String?
+
+  created_at        DateTime @default(now())
+
+  contratacao       Contratacao @relation(fields: [contratacao_id], references: [id], onDelete: Cascade)
+
+  @@unique([contratacao_id, numero_item])
+  @@map("itens_contratacao")
+}
+
+model UsuarioItem {
+  id            String   @id @default(uuid())
+  usuario_id    String
+  item_type     String   // 'contratacao' | 'ata' | 'contrato'
+  item_id       String
+
+  status        StatusAcompanhamento @default(ACOMPANHANDO)
+  seguido_em    DateTime @default(now())
+
+  usuario       Usuario       @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  contratacao   Contratacao?  @relation(fields: [item_id], references: [id], map: "usuario_item_contratacao")
+
+  @@unique([usuario_id, item_type, item_id])
+  @@map("usuario_itens")
+}
+
+model DocumentoPncp {
+  id                String   @id @default(uuid())
+  contratacao_id    String
+  tipo_documento    String?
+  descricao         String?
+  nome_arquivo      String?
+  url               String
+  content_type      String?
+  tamanho           BigInt?
+  documento_id_pncp String?
+  created_at        DateTime @default(now())
+
+  contratacao       Contratacao @relation(fields: [contratacao_id], references: [id], onDelete: Cascade)
+
+  @@map("documentos_pncp")
+}
+
+model DocumentoUsuario {
+  id                String   @id @default(uuid())
+  usuario_id        String
+  nome              String
+  descricao         String?
+  tipo              TipoDocumento
+  bucket            String   @default("documentos")
+  path              String
+  filename          String
+  content_type      String?
+  tamanho           BigInt?
+  hash              String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  usuario           Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  propostas         Proposta[]
+  acervos           AcervoTecnico[]
+
+  @@map("documentos_usuario")
+}
+
+model Edital {
+  id                String   @id @default(uuid())
+  contratacao_id    String   @unique
+  url               String
+  texto_extraido    String?  @db.Text
+  created_at        DateTime @default(now())
+
+  contratacao       Contratacao @relation(fields: [contratacao_id], references: [id], onDelete: Cascade)
+
+  @@map("editais")
+}
+
+model Proposta {
+  id                String   @id @default(uuid())
+  usuario_id        String
+  contratacao_id    String
+  tipo              TipoDocumento
+  status            StatusProposta @default(RASCUNHO)
+  dados             Json?
+  documento_id      String?
+  documento         DocumentoUsuario? @relation(fields: [documento_id], references: [id])
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  usuario           Usuario     @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  contratacao       Contratacao @relation(fields: [contratacao_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, contratacao_id, tipo])
+  @@map("propostas")
+}
+
+model AcervoTecnico {
+  id                String   @id @default(uuid())
+  usuario_id        String
+  nome              String
+  tipo              TipoDocumento
+  documento_id      String?
+  documento         DocumentoUsuario? @relation(fields: [documento_id], references: [id])
+  analise_ia        Json?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  usuario           Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@map("acervos_tecnicos")
+}
+
+model Alerta {
+  id                String   @id @default(uuid())
+  usuario_id        String
+  nome              String
+  ativo             Boolean  @default(true)
+  filtros           Json
+  created_at        DateTime @default(now())
+
+  usuario           Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@map("alertas")
+}
+
+model SyncLog {
+  id                String   @id @default(uuid())
+  tipo              String
+  status            String
+  registros_total   Int?
+  erro_mensagem     String?  @db.Text
+  started_at        DateTime @default(now())
+  completed_at      DateTime?
+
+  @@map("sync_logs")
+}

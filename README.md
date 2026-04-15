@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PNCP Insight - Inteligência em Licitações Públicas
 
-## Getting Started
+PNCP Insight é um SaaS focado na otimização da jornada de empresas B2B que vendem para o governo através do Portal Nacional de Contratações Públicas (PNCP).
 
-First, run the development server:
+## 🚀 Tecnologias
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Framework**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **Estilização**: [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL) + [Prisma ORM](https://www.prisma.io/)
+- **IA**: [Google Gemini Pro/Flash](https://ai.google.dev/)
+- **Pagamentos**: [Stripe](https://stripe.com/)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Estrutura do Projeto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/app/`: Rotas, Layouts e API Routes (incluindo Crons).
+- `src/services/`: Camada de lógica de negócio (PNCP, IA, Billing, Sync).
+- `src/components/`: Componentes UI e Layouts (Mobile-First).
+- `src/lib/`: Configurações de clientes (Supabase, Prisma).
+- `PLAN/`: Documentação estratégica e técnica do projeto.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚙️ Configuração
 
-## Learn More
+1. Clone o repositório.
+2. Copie o `.env.example` para `.env` e preencha as variáveis:
+   ```bash
+   cp .env.example .env
+   ```
+3. Instale as dependências:
+   ```bash
+   npm install
+   ```
+4. Execute as migrations do banco:
+   ```bash
+   npx prisma migrate dev
+   ```
+5. Inicie o servidor:
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+## 📈 Funcionalidades Implementadas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [x] Landing Page Premium.
+- [x] Sistema de Autenticação (Supabase SSR).
+- [x] Integração de Sincronismo com API PNCP.
+- [x] Dashboard de Monitoramento Administrativo.
+- [x] Busca de Licitações Inteligente.
+- [x] Análise de Editais com IA (Gemini).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Desenvolvido por **Antigravity AI** para o ecossistema Kilo.
